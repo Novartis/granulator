@@ -1,7 +1,7 @@
 Package: granulator
 Type: Package
 Title: Rapid benchmarking of methods for *in silico* deconvolution of bulk RNA-seq data 
-Version: 0.99.7
+Version: 0.99.8
 Authors@R: 
   c(person(given = "Sabina",
            family = "Pfister",
