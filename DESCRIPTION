@@ -1,0 +1,54 @@
+Package: granulator
+Type: Package
+Title: Rapid benchmarking of methods for *in silico* deconvolution of bulk RNA-seq data 
+Version: 0.99.7
+Authors@R: 
+  c(person(given = "Sabina",
+           family = "Pfister",
+           role = c("aut", "cre"),
+           email = "sabina.pfister@novartis.com"),
+    person(given = "Vincent",
+           family = "Kuettel",
+           role = "aut"),
+    person(given = "Enrico",
+           family = "Ferrero",
+           role = "aut"))
+Description: granulator is an R package for the estimation of cell type proportions from heterogeneous tissues 
+    based on bulk RNA-seq data or single cell RNA-seq expression profiles. The package provides a unified testing 
+    interface to rapidly run and benchmark multiple state-of-the-art deconvolution methods. Data for the deconvolution 
+    of peripheral blood mononuclear cells (PBMCs) into individual immune cell types is provided as well.
+URL: https://github.com/xanibas/granulator
+BugReports: https://github.com/xanibas/granulator/issues
+Depends: R (>= 4.1)
+Suggests: 
+    BiocStyle,
+    knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: knitr
+License: GPL-3
+Encoding: UTF-8
+LazyData: FALSE
+RoxygenNote: 7.1.1
+biocViews: RNASeq, GeneExpression, DifferentialExpression, Transcriptomics, StatisticalMethod, Regression
+Imports:
+	cowplot,
+	e1071,
+	epiR,
+	dplyr,
+	dtangle,
+	ggplot2, 
+	ggplotify,
+	grDevices,
+	limSolve,
+	magrittr,
+	MASS,
+	nnls,
+	parallel, 
+	pheatmap,
+	purrr,
+	rlang,
+	stats,
+	tibble,
+	tidyr,
+	utils

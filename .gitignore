@@ -1,0 +1,50 @@
+# History files
+.Rproj.user
+.Rhistory
+
+# RStudio files
+.Rproj.user/
+
+# Session Data files
+.RData
+
+# Git files
+.git
+
+# Bash files
+/*.sh
+
+# Output files from R CMD build
+/*.tar.gz
+
+# Output files from R CMD check
+/*.Rcheck/
+
+# github README Rmd
+/*.html
+/*.Rmd
+
+# produced vignettes
+vignettes/*.html
+vignettes/*.pdf
+
+# OAuth2 token
+.httr-oauth
+
+# knitr and R markdown default cache directories
+*_cache/
+/cache/
+
+# Temporary files created by R markdown
+*.utf8.md
+*.knit.md
+
+# pkgdown site
+docs/
+
+# translation temp files
+po/*~
+
+# temporary files
+.nfs*
+vignettes/.nfs*

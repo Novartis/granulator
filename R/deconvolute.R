@@ -1,0 +1,142 @@
+#-----------------------------------------------
+#                 LICENSE
+#-----------------------------------------------
+# Copyright 2019 Novartis Institutes for BioMedical Research Inc.
+# Licensed under the GNU General Public License, Version 3 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# https://www.r-project.org/Licenses/GPL-3
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+#'@title Deconvolution from bulk RNAseq
+#'
+#'@description \code{deconvolute} predicts cell type proportions from bulk
+#'RNAseq data by applying multiple deconvolution methods.
+#'
+#'@param m Bulk RNAseq: a genes (rows) by samples (columns) matrix
+#'containing transcript-per-million (TPM)-normalized gene expression values.
+#'
+#'@param sigMatrix Reference profile: a matrix or a named list of matrices.
+#'Each signature matrix should be a genes (rows) by cell types (columns) data
+#'frame containing TPM-normalized gene expression values of signature genes.
+#'
+#'@param methods Deconvolution methods: a character vector containing the names
+#'of the deconvolution methods to be applied. By default, all methods are run.
+#'Functions are either reimplementations of published methods or wrapper
+#'functions for published packages:
+#'\itemize{
+#'\item{ols: ordinary least squares}
+#'\item{nnls: non negative least squares
+#'regression model. Adapted from Abas et al. (2009)}
+#'\item{qprog: quadratic programming without constraints}
+#'\item{qprogwc: quadratic programming non-negative and sum-to-one constraints.
+#'Adapted from Gong et al. (2015)}
+#'\item{dtangle: wrapper for the cell deconvolution function \code{\link[dtangle]{dtangle}}
+#'form the package \pkg{dtangle}}
+#'\item{rls: robust linear regression. Adapted from Monaco
+#'et al. (2019)}
+#'\item{svr: support vector regression. Adapted from Newman et al.
+#'(2015)}
+#'}
+#'
+#'@param use_cores Number of cores to use for parallel processing
+#'
+#'@return Returns a list containing two elements: \itemize{
+#'\item{coefficients: estimated cell type proportions}
+#'\item{combinations: combination of methods and signatures tested}
+#'}
+#'
+#'@importFrom tidyr crossing everything unite
+#'
+#'@author Vincent Kuettel, Sabina Pfister
+#'
+#'@examples
+#'# load demo PBMCS data
+#'load_ABIS()
+#'
+#'# generate list of reference profiles to be tested
+#'sigMatrix <- list(
+#'sig1 = sigMatrix_ABIS_S0, 
+#'sig2 = sigMatrix_ABIS_S1)
+#'
+#'# deconvolute
+#'decon <- deconvolute(m = bulkRNAseq_ABIS, 
+#'sigMatrix = sigMatrix)
+#'
+#'@export
+deconvolute <- function(m, sigMatrix, 
+    methods = get_decon_methods(),
+    use_cores = 1){
+
+    # input check
+    if (!is.matrix(m))
+        stop('Dataset should be a matrix; got ', class(sigMatrix))
+
+    if (!is.matrix(sigMatrix) & !is.list(sigMatrix))
+        stop('Reference profile should be a matrix or list of multiple matrices; got ', class(sigMatrix))
+
+    if (!is.vector(methods))
+        stop('Methods should be a vector; got ', class(methods))
+
+    if (!all(methods %in% get_decon_methods()))
+        stop('Unknown method specified. Check available methods with `get_methods()`')   
+
+    if (is.matrix(sigMatrix))
+        sigMatrix = list(sigMatrix)
+
+    if (sum(is.na(m))>0)
+        stop("Bulk RNA-seq should not contain missing values.")
+
+    for(i in seq_along(sigMatrix)){
+        if (sum(is.na(sigMatrix[[i]]))>0)
+            stop("Signature matrix should not contain missing values.")
+        if (nrow(sigMatrix[[i]]) < ncol(sigMatrix[[i]]))
+            stop("The number of genes is less than the number of cell types.")
+    }
+
+    # fix cell type names
+    sigMatrix <- lapply(sigMatrix,fix_col_names)
+
+    # create data frame containing methods and signatures combinations
+    if (is.null(names(sigMatrix))){
+        signatures <- vapply(seq_along(sigMatrix), function(i){
+        paste0('sig', i)}, FUN.VALUE = character(1))
+        names(sigMatrix) <- signatures
+    } else {signatures <- names(sigMatrix)}
+
+    df <- crossing(method = methods, signature = signatures)
+    df <- unite(df,'model',remove=FALSE)
+
+    # run methods
+    res <- lapply(seq_len(nrow(df)), function(i) {
+        message('Running deconvolution model "', df$method[[i]], '" on signature "', df$signature[[i]], '"')
+        get(paste0('model_',df$method[[i]]))(m = m, sigMatrix = sigMatrix[[df$signature[[i]]]], ncores=use_cores)
+    })
+
+    # name the results: merge method and signature matrix
+    res_names <- paste0(df$method, '_', df$signature)
+    names(res) <- res_names
+
+    # extract coefficients from tested methods
+    coefficients <- lapply(res_names, function(x) as.data.frame(res[[x]]$coeff))
+    names(coefficients) <- res_names
+
+    # check for negative coefficients <= -10%
+    if( min(unlist(lapply(coefficients, function(x) min(x))))<=-10 )
+        message('Deconvolution returned negative coefficients, optimization of the reference profile is recommended.')
+
+    # force coefficients to 100%
+    coefficients <- lapply(coefficients, function(x) round((100/max(rowSums(x)))*x,2))
+
+    # outputS
+    res <- list(
+        coefficients = coefficients, 
+        combinations = as.data.frame(df))
+
+    return(res)
+}

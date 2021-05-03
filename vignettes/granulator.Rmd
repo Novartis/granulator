@@ -1,0 +1,318 @@
+---
+title: "Deconvolution of bulk RNA-seq data with granulator"
+output:
+  BiocStyle::html_document
+author:
+- name: Vincent Kuettel
+  affiliation: Autoimmunity Transplantation and Inflammation Bioinformatics, Novartis Institutes for BioMedical Research, Novartis Campus, Basel 4056, Switzerland.
+- name: Sabina Pfister
+  affiliation: Autoimmunity Transplantation and Inflammation Bioinformatics, Novartis Institutes for BioMedical Research, Novartis Campus, Basel 4056, Switzerland.
+- name: Enrico Ferrero
+  affiliation: Autoimmunity Transplantation and Inflammation Bioinformatics, Novartis Institutes for BioMedical Research, Novartis Campus, Basel 4056, Switzerland.
+date: "`r doc_date()`"
+package: "`r pkg_ver('BiocStyle')`"
+abstract: >
+  Heterogeneity in the cellular composition of bulk RNA-seq data may prevent or bias the results from differential expression analysis. To circumvent this limitation, *in silico* deconvolution infers cell type abundances by modelling gene expression levels as weighted sums of the cell-type specific expression profiles. Several computational methods have been developed to estimate cell type proportions from bulk transcriptomics data, and to account for cell type heterogeneity in the statistical analysis. The R package `r Biocpkg("granulator")` provides a unified testing interface to rapidly run and benchmark multiple state-of-the-art deconvolution methods. We demonstrate its usage on published bulk RNA-seq data from peripheral blood mononuclear cells.
+vignette: >
+ %\VignetteIndexEntry{Deconvoluting bulk RNA-seq data with granulator}
+ %\VignetteEngine{knitr::rmarkdown}
+ %\VignetteEncoding{UTF-8}
+bibliography: ./references.bib
+---
+
+```{r style, echo = FALSE, results = 'asis'}
+  BiocStyle::markdown()
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, message = FALSE, 
+    warning=FALSE, error = TRUE)
+```
+
+# Introduction
+
+Bulk transcriptomic data is often generated from heterogeneous samples composed of
+multiple cell types, where measured values represent an averaged gene
+expression across all cell types. This heterogeneity is a major hurdle in the statistical analysis,
+as differences in cell type proportions may prevent or bias the detection of 
+cell type-specific transcriptional programs.
+
+*In silico* deconvolution of bulk gene expression data allows to infer cell 
+type composition of heterogeneous biological samples. Deconvolution methods are 
+typically used to estimate cell type fractions in bulk RNA-seq data from whole blood, peripheral blood mononuclear cells or other complex tissues in healthy and diseased patients [@Abbas2009; @Shen-Orr2010]. Estimated cell type proportions can then be used in subsequent analysis to correct for cell-type heterogeneity making *in silico* deconvolution an attractive 
+alternative to the physical isolation of individual cell types or single cell RNA-seq.
+
+Several deconvolution methods have been published in recent years, many of which use cell type-specific gene expression references. In this vignette, we present `r Biocpkg("granulator")`, an R package that provides a unified testing interface to rapidly run and benchmark multiple state-of-the-art deconvolution 
+methods (Table \@ref(tab:decon)).
+
+
+| Name                | Function   | Method                                            | License                                                                            | Reference                            |
+|----------------------------|---------------------|-----------------------------------------------------------------|------------------------------------------------------------------------------------|--------------------------------------|
+| ols               | stats::lsfit        | Ordinary least squares                               | free ([GPL-2](https://cran.r-project.org/web/packages/L1pack/L1pack.pdf))          |                                      |
+| nnls | nnls::nnls          | Non-negative least squares               | free ([GPL-2, GPL-3](https://cran.r-project.org/web/packages/nnls/index.html))     | reimplemented based on [@Abbas2009]  |
+| qprogwc                      | limSolve::lsei      | Quadratic programming with non-negativity and sum-to-one constraint | free ([GPL-2, GPL-3](https://cran.r-project.org/web/packages/limSolve/index.html)) | reimplemented based on [@Gong2013]   |
+| qprog       | limSolve::Solve     | Quadratic programming without constraints                               | free ([GPL-2, GPL-3](https://cran.r-project.org/web/packages/limSolve/index.html)) |                                      |
+| rls        | MASS::rlm           | Re-weighted least squares                                        | free ([GPL-2, GPL-3](https://cran.r-project.org/web/packages/MASS/index.html))     | reimplemented based on [@Monaco2019] |
+| svr                  | e1071::svr          | Support vector regression                                       | free ([GPL-2, GPL-3](https://cran.r-project.org/web/packages/e1071/index.html))    | reimplemented based on [@Newman2015] |
+| dtangle         | dtangle::dtangle     | Linear mixing model                                        | free ([GPL-3](https://cran.r-project.org/web/packages/dtangle/index.html))         | [@Hunt2018]                         |
+: (\#tab:decon) Deconvolution methods. List of deconvolution algorithms available in `r Biocpkg("granulator")`.
+
+Each deconvolution method takes as input bulk expression profiles of mixed tissue samples and a reference molecular profile of the individual cell types, which are used to estimate the abundance of cell types in each sample. In the following sections we show how to use `r Biocpkg("granulator")` for the deconvolution of bulk RNA-seq data from peripheral blood mononuclear cells into the individual cellular components using public reference profiles (Table \@ref(tab:sign)) and how to assess the quality of the obtained predictions. 
+
+
+| Name              | Description                                                   | Reference     |
+|-------------------|---------------------------------------------------------------|---------------|
+| sigMatrix_ABIS_S0 | PBMCs reference profile (17 cell types)                       | [@Monaco2019] |
+| sigMatrix_ABIS_S1 | PBMCs reference profile (13 cell types)                       |               |
+| sigMatrix_ABIS_S2 | PBMCs reference profile (11 cell types)                       |               |
+| sigMatrix_ABIS_S3 | PBMCs reference profile (9 cell types)                        |               |
+: (\#tab:sign) Reference profiles. List of reference profiles available in `r Biocpkg("granulator")`.
+
+# Installation
+
+`r Biocpkg("granulator")` can be installed from Bioconductor using:
+
+```{r, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("granulator")
+```
+
+The package can be loaded using: 
+
+```{r, eval=TRUE}
+library(granulator)
+```
+
+# Data
+
+The datasets used in this vignette comprises bulk RNA-seq gene expression data
+of peripheral blood mononuclear cells (PBMCs) from 12 healthy donors and bulk 
+RNA-seq data of 29 isolated immune cell types from 4 healthy donors [@Monaco2019], 
+publicly available on the NCBI database under GEO accession number [GSE107011](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107011).
+For convenience, a subset of the data is included in the package and can be loaded by using the function `load_ABIS()`:
+
+
+```{r, results='hide'}
+# load datasets for deconvolution of PBMC RNA-seq data
+load_ABIS()
+```
+
+## Bulk PBMCs RNA-seq
+
+A subset of the PBMCs bulk RNA-seq data, stored in `bulkRNAseq_ABIS`, consists of a gene (rows) by 
+sample (columns) matrix with transcript-per-million (TPM) gene expression values:
+
+```{r}
+# print TPM values in bulk RNA-seq
+bulkRNAseq_ABIS[1:5, 1:5]
+```
+
+## Reference profiles
+
+We use the reference profile from isolated cell types for 17 immune cell types. The PBMCs reference profile, stored in `sigMatrix_ABIS_S0`, consists of a gene (rows) by cell type (columns) matrix containing transcript-per-million (TPM) 
+gene expression values normalized for total mRNA abundance:
+
+```{r}
+# print TPM values in reference profile matrix
+sigMatrix_ABIS_S0[1:5, 1:5]
+```
+
+Additionally, we provide a set of reference profile matrices stored in `sigMatrix_ABIS_S1`, `sigMatrix_ABIS_S2`, and `sigMatrix_ABIS_S3`, which were derived at different levels of cell type resolution by summing over similar cell types.
+
+## Measured cell type proportions
+
+Cell type proportions were measured by fluorescence-activated cell sorting (FACS) for 29 immune cell types [@Monaco2019]. Additional cell type proportions were computed by summing over cell types with highly similar transcriptional profiles. For instance `T.CD4.Naive` proportions consist of the weighted sum of the subtypes Th1, Th2, Th1/Th17, Tregs, Tfh, Naive CD4 T cells and Terminal Effector CD4 T cells.
+
+The measured cell type proportions, stored in `groundTruth_ABIS`, consists of a sample (rows) by cell type (columns) matrix with proportions expressed in percent:
+
+```{r}
+# print measured cell type proportions (percentages)
+groundTruth_ABIS[1:5, 1:5]
+```
+
+# Workflow
+
+The `r Biocpkg("granulator")` workflow consists of four steps:
+
+1. **Reference profiles**: Reference profiles for deconvolution are usually generated
+by differential expression analysis on bulk RNA-seq generated from isolated cell types 
+or cell-type clusters identified by single cell RNA-seq;
+
+2. **Deconvolution**: Bulk RNA-seq data from heterogeneous samples is than
+deconvoluted using one or more reference profiles and deconvolution methods;
+
+3. **Benchmarking**: Estimated cell type proportions are benchmarked against 
+measured cell type proportions to assess deconvolution performance. 
+Measured proportions are usually generated from fluorescence-activated cell sorting 
+or single cell RNA-seq data;
+
+4. **Correlation**: Benchmarked reference profiles can be used to deconvolve
+bulk RNA-seq data where individual cell types abundances are unknown. The 
+deconvoluted cell type proportions can be correlated with each other 
+in order to assess the degree of similarity in predictions across methods.
+
+## Comparing multiple reference profiles
+
+The performance of cell type deconvolution strongly depends on the choice and quality of the reference profile, and in particular on the degree of similarity between cell-type specific expression profiles [@Vallania2018; @AvilaCobos2020]. It is therefore recommended to test multiple reference profile matrices generated at different cell type resolutions. Here we use the published `sigMatrix_ABIS_S0` reference profile, and additional signatures generated by collapsing highly similar cell types into single categories (`sigMatrix_ABIS_S1`, `sigMatrix_ABIS_S2`, `sigMatrix_ABIS_S3`).
+
+```{r}
+# create list if multiple signature matrices to test simultaneously
+sigList = list(
+  ABIS_S0 = sigMatrix_ABIS_S0,
+  ABIS_S1 = sigMatrix_ABIS_S1, 
+  ABIS_S2 = sigMatrix_ABIS_S2, 
+  ABIS_S3 = sigMatrix_ABIS_S3)
+```
+
+We plot the cell-type similarity matrix of all reference profiles by computing their [Kendall Rank Correlation Coefficient](https://en.wikipedia.org/wiki/Kendall_rank_correlation_coefficient) with `plot_similarity()`, highlighting clusters of transcriptionally related cell types:
+
+```{r, fig.retina = 1}
+# plot signature matrix similarity matrices
+plot_similarity(sigMatrix=sigList)
+```
+
+A useful metric to evaluate the quality of reference profile matrices is to compute the 
+[Condition Number](https://en.wikipedia.org/wiki/Condition_number) `k`, which measures how sensitive the deconvolution is to variability in the input data. Generally, a matrix with low condition number (`k` close to 1) is well-conditioned, as it leads to a stable solution.
+
+## Deconvolution of bulk RNA-seq data
+
+Once suitable reference profiles have been generated, we use `deconvolute()` to estimate cell type 
+proportions from the tissue bulk RNA-seq dataset. The function takes a matrix dataset
+to be deconvoluted, a matrix or a list of reference profile matrices, and a vector of deconvolution methods. 
+All data matrices need to be normalized to TPM from raw counts with the function `get_TPM()`. By default, `deconvolute()` sequentially runs 
+all methods available. Optionally, we can provide a selected list of methods and the number of available processing cores 
+to minimize computation time. Every reference profile matrix is tested in combination with every selected method.
+
+```{r, results='hide'}
+# deconvolute input data using all available methods by default
+decon <- deconvolute(m = bulkRNAseq_ABIS, sigMatrix = sigList)
+```
+
+For each reference profile and method combination, the function returns the estimated cell type proportions in percentage. For instance, we can look at the cell type proportions computed by the support vector regression model (`svr`) using the `sigMatrix_ABIS_S0` reference profile:
+
+```{r}
+# print cell type proportions for svr model on ABIS_S0 reference profile
+decon$coefficients$svr_ABIS_S0[1:5, 1:5]
+```
+
+We can plot the estimated cell type proportions with the function `plot_proportions()`. Notice that while the sum of cell types proportions
+cannot exceed 100%, for some methods part of the bulk RNA-seq signal remains unassigned.
+```{r, fig.retina = 1}
+# plot cell type proportions for svr model on ABIS_S0 reference profile
+plot_proportions(deconvoluted = decon, method = 'svr', signature = 'ABIS_S0')
+```
+
+To plot all estimated cell type proportions we use the function `plot_deconvolute()`, which allows to compare results across deconvolution methods and cell types. The option `scale` indicates whether cell type proportions should be transformed into standard scores. Scaling is useful to directly compare deconvolution output, as the absolute percentages may vary considerably across methods.
+
+```{r, fig.retina = 1}
+# plot cell type proportions
+plot_deconvolute(deconvoluted = decon, scale = TRUE, labels = FALSE)
+```
+
+## Benchmarking of deconvolution methods
+
+The third step in the workflow is dedicated to assessing the 
+performance of deconvolution by taking advantage of available known cell types abundances.
+We benchmark deconvolution methods by regressing the estimates against the measured 
+cell type proportions with the function `benchmark()`:
+
+```{r}
+# benchmark methods by correlating estimated to measured cell type proportions
+bench <- benchmark(deconvoluted = decon, ground_truth = groundTruth_ABIS)
+```
+
+Summary statistics of the regression models by method, signature, and cell type can be displayed as follows:
+
+```{r}
+# print metrics
+head(bench$summary)
+```
+
+We can also print the average metrics by regression method and signature as follows:
+
+```{r}
+# print metrics
+head(bench$rank)
+```
+
+Evaluation metrics include the [Pearson Correlation Coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) (`pcc`), 
+the [Concordance Correlation Coefficient](https://en.wikipedia.org/wiki/Concordance_correlation_coefficient) (`ccc`), the [Coefficient of Determination](https://en.wikipedia.org/wiki/Coefficient_of_determination) (`adj.r2`), and the [Root Mean Square Error](https://en.wikipedia.org/wiki/Root-mean-square_deviation) (`rmse`). When a cell type cannot be deconvoluted, it's coefficients are returned as `NA`, which causes the corresponding metric coefficients to be missing as well.
+
+While `pcc` measures the linear correlation between relative changes in proportions across all samples, `ccc` measures the linear correlation between true and estimated proportions by taking the mean absolute percentages into account. Both `pcc` and `ccc` metrics can range between 1 and -1: a value of 1 represents a total positive correlation, 0 no correlation, and −1 a total negative correlation. `adj.r2` represents the square of `pcc` adjusted for the number of predictors in the model and takes values between 0 and 1. Conversely the `rmse` measures the quadratic mean of the differences between predicted values and observed values. A value of 0.05 represent a difference of 5%.
+
+The linear regression of estimated versus measured cell type proportions can be visualized 
+using `plot_regress()` on the `benchmark()` results. Here, we analyze the performance of the support vector regression model (`svr`) across the deconvoluted cell types using the `sigMatrix_ABIS_S0` reference profile:
+
+```{r, fig.retina = 1}
+# plot regression for svr model on ABIS_S0 reference profile
+plot_regress(benchmarked = bench, method = 'svr', signature = 'ABIS_S0')
+```
+
+Summary statistics across all methods are visualized using the 
+function `plot_benchmark()`. To do so, we provide the output from `benchmark()` 
+and the metric of interest (`pcc`,`ccc`,`adj.r2`,`rmse`). Below we show cell-type-specific 
+`pcc` scores for different deconvolution methods and reference profiles:
+
+```{r, fig.retina = 1}
+# plot pearson correlation between predictions and true proportions
+plot_benchmark(benchmarked = bench, metric = 'pcc')
+```
+
+While there are differences among decononvolution methods, the biggest variability in deconvolution
+performance is across different reference profiles. A number of cell types are accurately deconvoluted (mean `pcc`>0.75) when using the `sigMAtrix_ABIS_S0` reference profile. In contrast, predictions for `B.Memory`, `mDCs`, `Monocytes.C`, `Monocytes.NC.I`, `T.CD4.Naive`, `T.CD8.Naive`, and `T.CD4.Memory` cell types are less accurate (mean `pcc`<0.75), likely reflecting the uncertainty in discriminating between closely related cell subtypes. A better deconvolution performance can be obtained when these cell type subpopulations are collapsed.
+
+## Correlation analysis of deconvoluted proportions
+
+From the previous benchmark analysis, we select the reference profile `sigMatrix_ABIS_S2` for subsequent deconvolution analysis. We exclude 
+the deconvolution methods `dtangle` and `qprogwc`, as they were underperforming other algorithms when comparing the `pcc` evaluation metric.
+
+```{r, results='hide'}
+# deconvolute input data using selected methods and reference profile matrix
+methods <- c('ols','nnls','qprog','rls','svr')
+decon <- deconvolute(bulkRNAseq_ABIS, list(ABIS_S2 = sigMatrix_ABIS_S2), methods)
+```
+
+When no ground truth data is available, we can assess the performance of the different deconvolution methods by computing the correlation between estimated cell type proportions generated by all methods using the `correlate()` function. By default 
+estimated cell type proportions are scaled to standard scores to correct for differences 
+in absolute estimated cell-type specific proportions across algorithms.
+
+```{r}
+# correlation analysis
+correl <- correlate(deconvoluted = decon)
+```
+
+The `plot_correlate()` is used to visualize the results of `correlate()`, by plotting a heatmap, where estimated cell type proportions are clustered by collinearity across cell type and deconvolution models:
+
+```{r, fig.retina = 1}
+# correlation heatmap
+plot_correlate(correlated = correl, method="heatmap", legend=TRUE)
+```
+
+We observe that estimated cell type proportions are highly correlated between methods for all cell types, indicating that the deconvolution
+methods agree on the assignment of cell type specific signals. The average correlations across methods by cell type can be obtained as follows:
+
+```{r}
+# correlation mean summary statistics
+head(correl$summary)
+```
+
+Of particular use is also the computation of average correlations across cell types by method, which illustrate which methods are reporting similar estimated cell type proportions:
+
+```{r}
+# deconvolution method ranking
+head(correl$rank)
+```
+
+For subsequent analysis, the estimated cell-type correlation coefficients can be now included in a linear model as covariates to account for cell type heterogeneity, or to impute cell-type specific gene expression profiles.
+
+# Session Info
+
+Here is the output of `sessionInfo()` on the system on which this document was compiled:
+
+```{r}
+# print session info
+sessionInfo()
+```
+
+# References

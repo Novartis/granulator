@@ -1,0 +1,6 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$ 
+^NEWS\.md$
+^doc$
+^Meta$
