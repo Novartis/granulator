@@ -114,7 +114,7 @@ deconvolute <- function(m, sigMatrix,
 
     # run methods
     res <- lapply(seq_len(nrow(df)), function(i) {
-        message('Running deconvolution model "', df$method[[i]], '" on signature "', df$signature[[i]], '"')
+        message('Running deconvolution model: "', df$method[[i]], '"_"', df$signature[[i]], '"')
         get(paste0('model_',df$method[[i]]))(m = m, sigMatrix = sigMatrix[[df$signature[[i]]]], ncores=use_cores)
     })
 
@@ -127,8 +127,8 @@ deconvolute <- function(m, sigMatrix,
     names(coefficients) <- res_names
 
     # check for negative coefficients <= -10%
-    if( min(unlist(lapply(coefficients, function(x) min(x))))<=-10 )
-        message('Deconvolution returned negative coefficients, optimization of the reference profile is recommended.')
+    # if( min(unlist(lapply(coefficients, function(x) min(x))))<=-10 )
+    #     message('Deconvolution returned negative coefficients, optimization of the reference profile is recommended.')
 
     # force coefficients to 100%
     coefficients <- lapply(coefficients, function(x) round((100/max(rowSums(x)))*x,2))
