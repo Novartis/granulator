@@ -54,6 +54,7 @@ model_dtangle <- function(m, sigMatrix, ncores){
     {
         df <- order_genes(m, df$sigMatrix[,!(colnames(df$sigMatrix) %in% nas)])
         res2 <- dtangle(
+            Y = log2(as.matrix(t(df$m))+1), 
             references = log2(as.matrix(t(df$sigMatrix))+1),
             marker_method = "ratio")
         res$estimates[,colnames(res2$estimates)] <- res2$estimates
