@@ -15,17 +15,15 @@
 
 #'@title Dtangle
 #'
-#'@description \code{model_dtangle} computes the cell type proportions from
-#'heterogeneous bulk RNA-seq data. \code{model_dtangle} is a wrapper for 
+#'@description \code{model_dtangle}  solves the linear model A*coeff=y using
 #'the function \code{dtangle} from the package \pkg{limma}.
 #'
 #'@param sigMatrix Signature matrix: a genes (rows) by cell types (columns)
 #'data frame containing TPM-normalized signature genes.
 #'
-#'@param m Bulk RNA-seq: a genes (rows) by samples (columns) data frame
-#'containing TPM-normalized gene expression values.
+#'@param y Matrix with gene name son rows or columns.
 #'
-#'@param ncores Number of cores to use for parallel processing
+#'@param x Matrix with gene name son rows or columns.
 #'
 #'@return Returns a list comprising a data frame containing the estimated
 #'coefficients (rows) for each sample (columns).
@@ -35,15 +33,15 @@
 #'@author Vincent Kuettel, Sabina Pfister
 #'
 #'@noRd
-model_dtangle <- function(m, sigMatrix, ncores){
+model_dtangle <- function(y, x, ncores){
 
     # preprocess
-    df <- order_genes(m, sigMatrix)
+    df <- order_names(y, x)
 
     # deconvolute
     res <- dtangle(
-        Y = log2(as.matrix(t(df$m))+1), 
-        references = log2(as.matrix(t(df$sigMatrix))+1),
+        Y = log2(t(df$y)+1), 
+        references = log2(t(df$x)+1),
         marker_method = "ratio")
 
     # check cell-types without markers
@@ -52,14 +50,14 @@ model_dtangle <- function(m, sigMatrix, ncores){
     # remove cell-types without markers
     if(length(nas)>0)
     {
-        df <- order_genes(m, df$sigMatrix[,!(colnames(df$sigMatrix) %in% nas)])
+        df <- order_names(df$y, df$x[,!(colnames(df$x) %in% nas)])
         res2 <- dtangle(
-            Y = log2(as.matrix(t(df$m))+1), 
-            references = log2(as.matrix(t(df$sigMatrix))+1),
+            Y = log2(t(df$y)+1), 
+            references = log2(t(df$x)+1),
             marker_method = "ratio")
         res$estimates[,colnames(res2$estimates)] <- res2$estimates
     }
 
     # return coefficients
-    return(list(coeff = round(100*res$estimates,2)))
+    return(list(coeff = res$estimates))
 }

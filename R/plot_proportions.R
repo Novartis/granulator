@@ -55,7 +55,7 @@ plot_proportions <- function(deconvoluted, method = 'svr', signature = 'sig1') {
         stop('Method or signature name are not valid names.')
 
     # data
-    dat <- deconvoluted$coefficients[[paste0(method,'_',signature)]]
+    dat <- deconvoluted$proportions[[paste0(method,'_',signature)]]
 
     # format
     dat <- as_tibble(dat) %>%

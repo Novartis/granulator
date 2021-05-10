@@ -65,8 +65,8 @@
 #'@export
 correlate <- function(deconvoluted, scale = TRUE){
 
-    # get coefficients
-    dat <- deconvoluted$coefficients 
+    # get proportions
+    dat <- deconvoluted$proportions 
 
     # specify column names and combine lists into single data frame
     dat_com <- as.data.frame(lapply(seq_along(dat), function(x){

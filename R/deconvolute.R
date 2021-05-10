@@ -47,7 +47,8 @@
 #'@param use_cores Number of cores to use for parallel processing
 #'
 #'@return Returns a list containing two elements: \itemize{
-#'\item{coefficients: estimated cell type proportions}
+#'\item{coefficients: estimated cell type coefficients}
+#'\item{proportions: estimated cell type proportions in percentage}
 #'\item{combinations: combination of methods and signatures tested}
 #'}
 #'
@@ -114,28 +115,25 @@ deconvolute <- function(m, sigMatrix,
 
     # run methods
     res <- lapply(seq_len(nrow(df)), function(i) {
-        message('Running deconvolution model: "', df$method[[i]], '"_"', df$signature[[i]], '"')
-        get(paste0('model_',df$method[[i]]))(m = m, sigMatrix = sigMatrix[[df$signature[[i]]]], ncores=use_cores)
+        message('Running deconvolution method "', df$method[[i]], '" on signature matrix "', df$signature[[i]], '"')
+        get(paste0('model_',df$method[[i]]))(y = m, x = sigMatrix[[df$signature[[i]]]], ncores=use_cores)
     })
 
-    # name the results: merge method and signature matrix
+    # name the results
     res_names <- paste0(df$method, '_', df$signature)
     names(res) <- res_names
 
-    # extract coefficients from tested methods
-    coefficients <- lapply(res_names, function(x) as.data.frame(res[[x]]$coeff))
+    # extract coefficients
+    coefficients <- lapply(res_names, function(x) round(as.matrix(res[[x]]$coeff),2))
     names(coefficients) <- res_names
 
-    # check for negative coefficients <= -10%
-    # if( min(unlist(lapply(coefficients, function(x) min(x))))<=-10 )
-    #     message('Deconvolution returned negative coefficients, optimization of the reference profile is recommended.')
+    # compute proportions
+    proportions <- lapply(coefficients, function(x) round((100/max(rowSums(x), na.rm=TRUE))*x,2))
 
-    # force coefficients to 100%
-    coefficients <- lapply(coefficients, function(x) round((100/max(rowSums(x)))*x,2))
-
-    # outputS
+    # output
     res <- list(
-        coefficients = coefficients, 
+        coefficients = coefficients,
+        proportions = proportions, 
         combinations = as.data.frame(df))
 
     return(res)

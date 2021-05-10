@@ -15,21 +15,15 @@
 
 #'@title Quadratic programming without constraints
 #'
-#'@description \code{model_qprog} infers the cell type proportions from 
-#'heterogenous bulk RNA-seq data using quadratic programming without constraints.
+#'@description \code{model_qprog} solves the linear model A*coeff=y using
+#'quadratic programming without constraints.
 #'
 #'@details \code{model_qprog} applies \code{\link[limSolve]{Solve}} function 
-#'from the \pkg{limSolve} package to deconvolve bulk RNA-seq data by quadratic 
-#'programming. The function \code{\link[limSolve]{Solve}} requires a signature 
-#'matrix and bulk RNA-seq data as input.
+#'from the \pkg{limSolve} package.
 #'
-#'@param m Bulk RNAseq: a genes (rows) by samples (columns) data frame
-#'containing transcript-per-million (TPM)-normalized gene expression values
+#'@param y Matrix with gene name son rows or columns.
 #'
-#'@param sigMatrix Signature matrix: A data frame or a list of data frames.
-#'Each signature matrix should be a genes (rows) by cell types (columns)
-#'data frame containing TPM-normalized gene expression values of signature 
-#'genes.
+#'@param x Matrix with gene name son rows or columns.
 #'
 #'@param ncores Number of cores to use for parallel processing.
 #'
@@ -43,26 +37,26 @@
 #'@importFrom limSolve Solve
 #'
 #'@noRd
-model_qprog <- function(m, sigMatrix, ncores){
+model_qprog <- function(y, x, ncores){
 
     # preprocess
-    df <- order_genes(m, sigMatrix)
+    df <- order_names(y, x)
 
     # deconvolute
-    lim_res <- lapply(seq_len(ncol(df$m)), function(i){
+    lim_res <- lapply(seq_len(ncol(df$y)), function(z){
         # parameters to the objective function
-        A <- as.matrix(df$sigMatrix)
-        B <- as.vector(df$m[,i])
+        A <- df$x
+        B <- as.vector(df$y[,z])
         return( Solve(A, B) )
     })
 
     # return coefficients
-    names(lim_res) <- colnames(df$m)
+    names(lim_res) <- colnames(df$y)
     lim_wo_constraints <- list()
     lim_wo_constraints$coeff <- t(data.frame(lapply(lim_res, 
-        function(x) x*100)))
+        function(z) z)))
     lim_wo_constraints <- lapply(lim_wo_constraints, 
-        function(x) `rownames<-`(x,colnames(df$m)))
+        function(z) `rownames<-`(z,colnames(df$y)))
 
-    return(list(coeff = round(lim_wo_constraints$coeff,2)))
+    return(list(coeff = lim_wo_constraints$coeff))
 }

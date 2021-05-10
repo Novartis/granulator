@@ -10,7 +10,7 @@ get_TPM(counts, effLen)
 \item{counts}{Bulk RNAseq: a genes (rows) by samples (columns) matrix
 containing gene raw counts.}
 
-\item{effLen}{Vector of read lengths.}
+\item{effLen}{Vector of gene lengths.}
 }
 \value{
 Returns a transcript-per-million (TPM)-normalized matrix.

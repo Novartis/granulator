@@ -15,18 +15,14 @@
 
 #'@title Support vector regression
 #'
-#'@description \code{model_svr} deconvolves the estimated cell sub-type
-#'proportions from bulk RNA-seq data.
+#'@description \code{model_svr} solves the linear model A*coeff=y using
+#'support vector regression.
 #'
 #'@details \code{model_svr} applies the \code{\link[e1071]{svm}} function.
 #'
-#'@param m Bulk RNAseq: a genes (rows) by samples (columns) data frame
-#'containing transcript-per-million (TPM)-normalized gene expression
-#'values.
+#'@param y Matrix with gene name son rows or columns.
 #'
-#'@param sigMatrix Signature matrix: A data frame or a list of data frames.
-#'Each signature matrix should be a genes (rows) by cell types (columns) data 
-#'frame containing TPM-normalized gene expression values of signature genes.
+#'@param x Matrix with gene name son rows or columns.
 #'
 #'@param ncores Number of cores to use for parallel processing.
 #'
@@ -39,21 +35,21 @@
 #'@author Vincent Kuettel, Sabina Pfister
 #'
 #'@noRd
-model_svr <- function(m, sigMatrix, ncores){
+model_svr <- function(y, x, ncores){
 
     # preprocess
-    df <- order_genes(m, sigMatrix)
+    df <- order_names(y, x)
 
     # hyperparameter
     nu <- c(0.25, 0.5, 0.75)
 
     # deconvolute
-    res <- mclapply(seq_len(ncol(df$m)), function(x) {
+    res <- mclapply(seq_len(ncol(df$y)), function(z) {
         lapply(nu, function(i) {
             suppressMessages(
                 suppressWarnings(
-                    svm(x = as.matrix(df$sigMatrix),
-                        y = as.vector(df$m[,x]), 
+                    svm(x = df$x,
+                        y = as.vector(df$y[,z]), 
                         nu = i, 
                         type = 'nu-regression',
                         scale = TRUE, 
@@ -63,24 +59,23 @@ model_svr <- function(m, sigMatrix, ncores){
     }, mc.cores = ncores)
 
     # rmse for each model
-    rmse <-  lapply(res, function(x) { 
-        lapply(x, function(i){
+    rmse <-  lapply(res, function(z) { 
+        lapply(z, function(i){
             sqrt(sum(i$residuals ^ 2)/length(i$residuals))
         })
     })
 
     # find minimum rmse for each sample
-    rmse <- unlist(lapply(rmse, function(x) which.min(unlist(x))))
+    rmse <- unlist(lapply(rmse, function(z) which.min(unlist(z))))
 
     # extract models with min rmse
-    mod <- lapply(seq_along(res), function(i) {res[[i]][[rmse[i]]] })
+    mod <- lapply(seq_along(res), function(z) {res[[z]][[rmse[z]]] })
 
     # return coefficients
-    coefs <- lapply(mod, function(x) {as.numeric(t(x$coefs) %*% x$SV)})
-    coefs <- as.data.frame(t(data.frame(coefs)))*100
-    rownames(coefs) <- colnames(df$m)
-    colnames(coefs) <- colnames(df$sigMatrix)
-    coefs <- apply(coefs, 2, function(x) {ifelse(x < 0, 0, x)})
+    coefs <- lapply(mod, function(z) {as.numeric(t(z$coefs) %*% z$SV)})
+    coefs <- as.data.frame(t(data.frame(coefs)))
+    rownames(coefs) <- colnames(df$y)
+    colnames(coefs) <- colnames(df$x)
 
-    return(list(coeff = round(coefs,2)))
+    return(list(coeff = coefs))
 }

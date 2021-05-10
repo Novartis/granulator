@@ -37,7 +37,8 @@ et al. (2019)}
 }
 \value{
 Returns a list containing two elements: \itemize{
-\item{coefficients: estimated cell type proportions}
+\item{coefficients: estimated cell type coefficients}
+\item{proportions: estimated cell type proportions in percentage}
 \item{combinations: combination of methods and signatures tested}
 }
 }

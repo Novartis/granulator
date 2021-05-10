@@ -15,22 +15,15 @@
 
 #'@title Robust weighted least squares
 #'
-#'@description \code{model_rls} infers the cell type proportions from 
-#'heterogenous bulk RNA-seq data using a robust linear model.
+#'@description \code{model_rls}  solves the linear model A*coeff=y using
+#'a robust linear model.
 #'
 #'@details \code{model_rls} applies the \code{\link[MASS]{rlm}} function 
-#'for multivariate robust linear regression to estimate cell sub-type proportions 
-#'from bulk RNA-seq data. In latent linear modeling, coefficients correspond to 
-#'the proportions of a cell sub-types.
+#'for multivariate robust linear regression.
 #'
-#'@param m Bulk RNAseq: a genes (rows) by samples (columns) data frame
-#'containing transcript-per-million (TPM)-normalized gene expression
-#'values
+#'@param y Matrix with gene name son rows or columns.
 #'
-#'@param sigMatrix Signature matrix: A data frame or a list of data frames.
-#'Each signature matrix should be a genes (rows) by cell types (columns)
-#'data frame containing TPM-normalized gene expression values of signature
-#'genes.
+#'@param x Matrix with gene name son rows or columns.
 #'
 #'@param ncores Number of cores to use for parallel processing
 #'
@@ -42,22 +35,22 @@
 #'@author Vincent Kuettel, Sabina Pfister
 #'
 #'@noRd
-model_rls <- function(m, sigMatrix, ncores){
+model_rls <- function(y, x, ncores){
 
     # preprocess
-    df <- order_genes(m, sigMatrix)
+    df <- order_names(y, x)
 
     # deconvolute
-    rlm <- apply(df$m, 2, function(x){
+    rlm <- apply(df$y, 2, function(z){
         suppressMessages(
                 suppressWarnings(
-                    rlm(as.matrix(df$sigMatrix), as.vector(x),
+                    rlm(df$x, as.vector(z),
                     maxit = 1000, psi = psi.huber)))
     })
 
     # return coefficients
-    coeff <- t(data.frame(lapply(rlm, function(x) x$coefficients*100)))
-    rownames(coeff) <- colnames(df$m)
+    coeff <- t(data.frame(lapply(rlm, function(z) z$coefficients)))
+    rownames(coeff) <- colnames(df$y)
 
-    return(list(coeff = round(coeff,2)))
+    return(list(coeff = coeff))
 }

@@ -15,19 +15,15 @@
 
 #'@title Ordinary least squares model
 #'
-#'@description \code{model_ols} infers the cell type proportions from
-#'heterogenous bulk RNA-seq data using a simple linear regression model
-#'without constraints.
+#'@description \code{model_ols}  solves the linear model A*coeff=y using
+#'a simple linear regression model without constraints.
 #'
 #'@details \code{model_ols} applies the \code{\link[stats]{lsfit}}
-#'function for ordinary least squares model regression to estimate cell sub-type
-#'proportions from bulk RNA-seq data.
+#'function for ordinary least squares model regression.
 #'
-#'@param sigMatrix Signature matrix: a genes (rows) by cell types (columns)
-#'data frame containing TPM-normalized signature genes.
+#'@param y Matrix with gene name son rows or columns.
 #'
-#'@param m Bulk RNA-seq: a genes (rows) by samples (columns) data frame
-#'containing TPM-normalized gene expression values.
+#'@param x Matrix with gene name son rows or columns.
 #'
 #'@param ncores Number of cores to use for parallel processing.
 #'
@@ -39,20 +35,20 @@
 #'@author Vincent Kuettel, Sabina Pfister
 #'
 #'@noRd
-model_ols <- function(m, sigMatrix, ncores)
+model_ols <- function(y, x, ncores)
 {
     # preprocess
-    df <- order_genes(m, sigMatrix)
+    df <- order_names(y, x)
 
     # deconvolute: lm
-    fit <- apply(df$m, 2, function(x) {lsfit(
-        x = as.matrix(df$sigMatrix), 
-        y = as.vector(x), 
+    fit <- apply(df$y, 2, function(z) {lsfit(
+        x = df$x, 
+        y = as.vector(z), 
         intercept = FALSE)})
 
     # return coefficients
-    coeff <- t(data.frame(lapply(fit, function(x) x$coefficients * 100)))
-    rownames(coeff) <- colnames(df$m)
+    coeff <- t(data.frame(lapply(fit, function(z) z$coefficients)))
+    rownames(coeff) <- colnames(df$y)
 
-    return(list(coeff = round(coeff,2)))
+    return(list(coeff = coeff))
 }

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-#'@title Regress estimated cell type coefficients against the ground truth
+#'@title Regress estimated cell type proportions against the ground truth
 #'
 #'@description \code{regress} computes regression between estimated cell 
 #'type proportions and the measured cell type  proportions (ground truth).
@@ -77,19 +77,19 @@ benchmark <- function(deconvoluted, ground_truth){
 
     # results 
     res <- list(
-            data = lapply(deconvoluted$coefficients, function(x) NULL),
-            stats = lapply(deconvoluted$coefficients, function(x) NULL),
+            data = lapply(deconvoluted$proportions, function(x) NULL),
+            stats = lapply(deconvoluted$proportions, function(x) NULL),
             summary = NULL)
 
     # stats
-    for (i in seq_along(deconvoluted$coefficients))
+    for (i in seq_along(deconvoluted$proportions))
     {  
-        x <- names(deconvoluted$coefficients)[i]
+        x <- names(deconvoluted$proportions)[i]
         m <- deconvoluted$combinations$method[i]
         s <- deconvoluted$combinations$signature[i]
 
-        # coefficients
-        pred <- deconvoluted$coefficients[[x]]
+        # proportions
+        pred <- deconvoluted$proportions[[x]]
         prop <- ground_truth
 
         # remove nas

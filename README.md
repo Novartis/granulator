@@ -127,7 +127,7 @@ data from peripheral blood mononuclear cells (PBMCs) into the individual
 cellular components and how to assess the quality of the obtained
 predictions in the following vignette: [Deconvolution of bulk RNA-seq
 data with
-granulator](https://bioconductor.org/packages/release/bioc/vignettes/granulator/inst/doc/granulator.html).
+granulator](https://bioconductor.org/packages/granulator).
 
 ## References
 

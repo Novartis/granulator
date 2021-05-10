@@ -189,15 +189,17 @@ to minimize computation time. Every reference profile matrix is tested in combin
 decon <- deconvolute(m = bulkRNAseq_ABIS, sigMatrix = sigList)
 ```
 
-For each reference profile and method combination, the function returns the estimated cell type proportions in percentage. For instance, we can look at the cell type proportions computed by the support vector regression model (`svr`) using the `sigMatrix_ABIS_S0` reference profile:
+For each reference profile and method combination, the function returns the estimated cell type `coefficients` and `proportions` (in percentage). Although there may be slightly negative proportions, significant negative values means that deconvolution mehtods fails to converge on a 
+biological meaningful solution, and the reference profile matrix should be further refined.
+
+We can look at the cell type proportions computed by the support vector regression model (`svr`) using the `sigMatrix_ABIS_S0` reference profile:
 
 ```{r}
 # print cell type proportions for svr model on ABIS_S0 reference profile
-decon$coefficients$svr_ABIS_S0[1:5, 1:5]
+decon$proportions$svr_ABIS_S0[1:5, 1:5]
 ```
 
-We can plot the estimated cell type proportions with the function `plot_proportions()`. Notice that while the sum of cell types proportions
-cannot exceed 100%, for some methods part of the bulk RNA-seq signal remains unassigned.
+We can plot the estimated cell type proportions with the function `plot_proportions()`. Notice that while the sum of cell types proportions cannot exceed 100%, for some methods part of the bulk RNA-seq signal remains unassigned.
 ```{r, fig.retina = 1}
 # plot cell type proportions for svr model on ABIS_S0 reference profile
 plot_proportions(deconvoluted = decon, method = 'svr', signature = 'ABIS_S0')
@@ -237,7 +239,7 @@ head(bench$rank)
 ```
 
 Evaluation metrics include the [Pearson Correlation Coefficient](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient) (`pcc`), 
-the [Concordance Correlation Coefficient](https://en.wikipedia.org/wiki/Concordance_correlation_coefficient) (`ccc`), the [Coefficient of Determination](https://en.wikipedia.org/wiki/Coefficient_of_determination) (`adj.r2`), and the [Root Mean Square Error](https://en.wikipedia.org/wiki/Root-mean-square_deviation) (`rmse`). When a cell type cannot be deconvoluted, it's coefficients are returned as `NA`, which causes the corresponding metric coefficients to be missing as well.
+the [Concordance Correlation Coefficient](https://en.wikipedia.org/wiki/Concordance_correlation_coefficient) (`ccc`), the [Coefficient of Determination](https://en.wikipedia.org/wiki/Coefficient_of_determination) (`adj.r2`), and the [Root Mean Square Error](https://en.wikipedia.org/wiki/Root-mean-square_deviation) (`rmse`). When a cell type cannot be deconvoluted, it's proportions are returned as `NA`, which causes the corresponding metric coefficients to be missing as well.
 
 While `pcc` measures the linear correlation between relative changes in proportions across all samples, `ccc` measures the linear correlation between true and estimated proportions by taking the mean absolute percentages into account. Both `pcc` and `ccc` metrics can range between 1 and -1: a value of 1 represents a total positive correlation, 0 no correlation, and −1 a total negative correlation. `adj.r2` represents the square of `pcc` adjusted for the number of predictors in the model and takes values between 0 and 1. Conversely the `rmse` measures the quadratic mean of the differences between predicted values and observed values. A value of 0.05 represent a difference of 5%.
 

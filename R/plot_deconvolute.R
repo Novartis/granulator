@@ -59,7 +59,7 @@
 #'@export
 plot_deconvolute <- function(deconvoluted = deconvoluted, scale = TRUE, labels = TRUE, markers=TRUE){
 
-    dat <- deconvoluted$coefficients
+    dat <- deconvoluted$proportions
     met <- names(dat)
 
     # scale

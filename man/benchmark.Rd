@@ -2,7 +2,7 @@
 % Please edit documentation in R/benchmark.R
 \name{benchmark}
 \alias{benchmark}
-\title{Regress estimated cell type coefficients against the ground truth}
+\title{Regress estimated cell type proportions against the ground truth}
 \usage{
 benchmark(deconvoluted, ground_truth)
 }

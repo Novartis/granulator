@@ -27,28 +27,30 @@ fix_col_names <- function(matrix){
     return(matrix)
 }
 
-#'@title Extaction of overlapping genes between signature and bulk data
-#'@description \code{\link{order_genes}} finds intersecting genes between the
-#'signature matrix and bulk RNA-seq data.
-#'@param m Signature matrix: a data frame containing signature genes (rows) 
-#'for each cell sub-type (columns).
-#'@param sigMatrix Bulk RNA-seq: a data frame containing TPM-normalized gene
-#'expression values (rows) for individuals (columns).
-#'@return Returns a list of data frames, the bulk RNAseq data and signature
-#'matrix
+#'@title Extaction of overlapping  between two matrices
+#'@description \code{\link{order_names}} finds intersecting samples between
+#'two matrices.names
+#'@param y Matrix or data.frame.
+#'@param x Matrix or data.frame.
+#'@return Returns a list of matrices filtered by overlapping names
 #'@author Vincent Kuettel, Sabina Pfister
 #'@noRd
-order_genes <- function(m, sigMatrix){
-    genes <- intersect(rownames(m), rownames(sigMatrix))
-    if(length(genes) == 0)
-        stop("No overlapping genes between bulk matrix and signature matrix") 
-    m <- as.matrix(m[genes,,drop=FALSE], row.names = genes)
-    m <- as.matrix(m[order(rownames(m)), 
-                    order(colnames(m)),drop=FALSE])
-    sigMatrix <- as.matrix(sigMatrix[genes,])
-    sigMatrix <- as.matrix(sigMatrix[order(rownames(sigMatrix)), 
-                            order(colnames(sigMatrix))])
-    return(list(m=m, sigMatrix=sigMatrix))
+order_names <- function(y, x){
+    if(length(intersect(rownames(y), rownames(x)))>0){
+        names <- intersect(rownames(y), rownames(x))
+        y <- as.matrix(y[names,,drop=FALSE])
+        y <- as.matrix(y[order(rownames(y)), order(colnames(y)),drop=FALSE])
+        x <- as.matrix(x[names,])
+        x <- as.matrix(x[order(rownames(x)), order(colnames(x))])
+    } else if(length(intersect(colnames(y), colnames(x)))>0){
+        names <- intersect(colnames(y), colnames(x))
+        y <- as.matrix(y[,names,drop=FALSE])
+        y <- as.matrix(y[order(rownames(y)), order(colnames(y)),drop=FALSE])
+        x <- as.matrix(x[,names])
+        x <- as.matrix(x[order(rownames(x)), order(colnames(x))])
+    } else
+        stop("No overlapping names found.") 
+    return(list(y=as.matrix(y), x=as.matrix(x)))
 }
 
 #'@title get supported deconvolution methods acronyms

@@ -15,22 +15,15 @@
 
 #'@title Quadratic program with constraints
 #'
-#'@description \code{model_qprogwc} infers the cell type proportions from 
-#'heterogenous bulk RNA-seq data using quadratic programming under non-negativity 
-#'and sum-to-one constraint.
+#'@description \code{model_qprogwc} solves the linear model A*coeff=y using
+#'quadratic programming under non-negativity and sum-to-one constraint.
 #'
 #'@details \code{model_qprogwc} applies the function \code{\link[limSolve]{lsei}}
-#'from the \pkg{limSolve} package to deconvolve bulk RNA-seq data by quadratic
-#'programming. The function \code{\link[limSolve]{lsei}} requires a signature
-#'matrix and bulk RNA-seq data as input and imposes non-negativity and 
-#'sum-to-one constraints.
+#'from the \pkg{limSolve} package.
 #'
-#'@param m Bulk RNAseq: a genes (rows) by samples (columns) data frame
-#'containing transcript-per-million (TPM)-normalized gene expression values.
+#'@param y Matrix with gene name son rows or columns.
 #'
-#'@param sigMatrix Signature matrix: A data frame or a list of data frames.
-#'Each signature matrix should be a genes (rows) by cell types (columns) data
-#'frame containing TPM-normalized gene expression values of signature genes.
+#'@param x Matrix with gene name son rows or columns.
 
 #'@param ncores Number of cores to use for parallel processing.
 #'
@@ -42,34 +35,34 @@
 #'@importFrom limSolve lsei
 #'
 #'@noRd
-model_qprogwc <- function(m, sigMatrix, ncores) {
+model_qprogwc <- function(y, x, ncores) {
 
     # preprocess
-    df <- order_genes(m, sigMatrix)
+    df <- order_names(y, x)
 
     # deconvolute
-    lim_res <- lapply(seq_len(ncol(df$m)), function(i) {
+    lim_res <- lapply(seq_len(ncol(df$y)), function(z) {
         # parameters to the objective function
-        A <- as.matrix(df$sigMatrix)
-        B <- as.vector(df$m[,i])
+        A <- df$x
+        B <- as.vector(df$y[,z])
 
         # equality constraint (weights sum to 1)
-        E <- matrix(rep(1, ncol(df$sigMatrix)), nrow = 1)
+        E <- matrix(rep(1, ncol(df$x)), nrow = 1)
         F <- 1
 
         # inequality constraints (all weights nonnegative)
-        G <- diag(1, ncol(df$sigMatrix))
-        H <- rep(0, ncol(df$sigMatrix))
+        G <- diag(1, ncol(df$x))
+        H <- rep(0, ncol(df$x))
         return( lsei(A = A, B = B, E = E, F = F, G = G, H = H) )
     })
 
     # return coefficients
-    names(lim_res) <- colnames(df$m)
+    names(lim_res) <- colnames(df$y)
     lim_with_constraints <- list()
     lim_with_constraints$coeff <- t(data.frame(lapply(lim_res, 
-        function(x) x$X*100)))
+        function(z) z$X)))
     lim_with_constraints <- lapply(lim_with_constraints, 
-        function(x) `rownames<-`(x,colnames(df$m)))
+        function(z) `rownames<-`(z,colnames(df$y)))
 
-    return(list(coeff = round(lim_with_constraints$coeff,2)))
+    return(list(coeff = lim_with_constraints$coeff))
 }

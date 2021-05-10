@@ -15,14 +15,12 @@
 
 #'@title Non-negative least squares model
 #'
-#'@description \code{model_nnls} infers cell type proportions from 
-#'bulk RNA-seq data using a linear algorithm with a non-negative constraint.
+#'@description \code{model_nnls}  solves the linear model A*coeff=y using
+#'a linear algorithm with a non-negative constraint.
 #'
-#'@param sigMatrix Signature matrix: a genes (rows) by cell types (columns)
-#'data frame containing TPM-normalized signature genes.
+#'@param y Matrix with gene name son rows or columns.
 #'
-#'@param m Bulk RNA-seq: a genes (rows) by samples (columns) data frame
-#'containing TPM-normalized gene expression values.
+#'@param x Matrix with gene name son rows or columns.
 #'
 #'@param ncores Number of cores to use for parallel processing.
 #'
@@ -34,20 +32,20 @@
 #'@author Vincent Kuettel, Sabina Pfister
 #'
 #'@noRd
-model_nnls = function(m, sigMatrix, ncores){
+model_nnls = function(y, x, ncores){
 
     # preprocess
-    df <- order_genes(m, sigMatrix)
+    df <- order_names(y, x)
 
     # deconvolute
-    fit <- apply(df$m, 2, function(x) {
-        nnls(A = as.matrix(df$sigMatrix), b = as.vector(x))})
+    fit <- apply(df$y, 2, function(z) {
+        nnls(A = df$x, b = as.vector(z))})
 
     # return coefficients
-    coeff <- data.frame(lapply(fit, function(x) x[['x']]))*100
-    colnames(coeff) <- colnames(df$m)
-    rownames(coeff) <- colnames(df$sigMatrix)
+    coeff <- data.frame(lapply(fit, function(z) z$x))
+    colnames(coeff) <- colnames(df$y)
+    rownames(coeff) <- colnames(df$x)
     coeff <- t(coeff)
 
-    return(list(coeff = round(coeff,2)))
+    return(list(coeff = coeff))
 }
