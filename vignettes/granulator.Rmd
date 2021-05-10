@@ -3,9 +3,9 @@ title: "Deconvolution of bulk RNA-seq data with granulator"
 output:
   BiocStyle::html_document
 author:
-- name: Vincent Kuettel
-  affiliation: Autoimmunity Transplantation and Inflammation Bioinformatics, Novartis Institutes for BioMedical Research, Novartis Campus, Basel 4056, Switzerland.
 - name: Sabina Pfister
+  affiliation: Autoimmunity Transplantation and Inflammation Bioinformatics, Novartis Institutes for BioMedical Research, Novartis Campus, Basel 4056, Switzerland.
+- name: Vincent Kuettel
   affiliation: Autoimmunity Transplantation and Inflammation Bioinformatics, Novartis Institutes for BioMedical Research, Novartis Campus, Basel 4056, Switzerland.
 - name: Enrico Ferrero
   affiliation: Autoimmunity Transplantation and Inflammation Bioinformatics, Novartis Institutes for BioMedical Research, Novartis Campus, Basel 4056, Switzerland.
