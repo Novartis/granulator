@@ -15,7 +15,7 @@
 
 #'@title Robust weighted least squares
 #'
-#'@description \code{model_rls}  solves the linear model A*coeff=y using
+#'@description \code{model_rls}  solves the linear model x*coeff=y using
 #'a robust linear model.
 #'
 #'@details \code{model_rls} applies the \code{\link[MASS]{rlm}} function 
@@ -27,8 +27,8 @@
 #'
 #'@param ncores Number of cores to use for parallel processing
 #'
-#'@return Coefficients: a data frame containing estimates for cell sub-type
-#'proportions (columns) for individuals (rows).
+#'@return Coefficients: a data frame containing estimates for 
+#'coefficients for the linear model x*coeff=y.
 #'
 #'@importFrom MASS rlm psi.huber
 #'

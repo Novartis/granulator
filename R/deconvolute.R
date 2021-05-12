@@ -75,42 +75,55 @@ deconvolute <- function(m, sigMatrix,
     use_cores = 1){
 
     # input check
-    if (!is.matrix(m))
-        stop('Dataset should be a matrix; got ', class(sigMatrix))
-
-    if (!is.matrix(sigMatrix) & !is.list(sigMatrix))
-        stop('Reference profile should be a matrix or list of multiple matrices; got ', class(sigMatrix))
-
     if (!is.vector(methods))
-        stop('Methods should be a vector; got ', class(methods))
+        stop('methods should be a vector.')
 
     if (!all(methods %in% get_decon_methods()))
-        stop('Unknown method specified. Check available methods with `get_methods()`')   
+        stop('unknown methods. Available methods: ', paste0(get_decon_methods(),collapse=", ")) 
+
+    if (!is.matrix(m))
+        stop('m should be a matrix.')
+
+    if (any(is.na(m)))
+        stop("m should not contain missing values.")
+
+    if (any(m<0))
+        stop("m should not contain negative values.")
+
+    if (!is.matrix(sigMatrix) & !is.list(sigMatrix))
+        stop('sigMatrix should be a matrix or list of multiple matrices.')
+
+    if (is.list(sigMatrix) & length(sigMatrix)==0)
+        stop('no valid sigMatrix provided.')
+
+    if (is.list(sigMatrix))
+        if (any(unlist(lapply(sigMatrix,function(x) !is.matrix(x)))))
+            stop('sigMatrix should be a matrix or list of multiple matrices.')
 
     if (is.matrix(sigMatrix))
         sigMatrix = list(sigMatrix)
 
-    if (sum(is.na(m))>0)
-        stop("Bulk RNA-seq should not contain missing values.")
-
     for(i in seq_along(sigMatrix)){
-        if (sum(is.na(sigMatrix[[i]]))>0)
-            stop("Signature matrix should not contain missing values.")
-        if (nrow(sigMatrix[[i]]) < ncol(sigMatrix[[i]]))
-            stop("The number of genes is less than the number of cell types.")
+        if (any(is.na(sigMatrix[[i]])))
+            stop("sigMatrix should not contain missing values.")
+        if (any(sigMatrix[[i]]<0))
+            stop("sigMatrix should not contain missing values.")
+        if (nrow(sigMatrix[[i]]) <= ncol(sigMatrix[[i]]))
+            stop("in sigMatrix the number of genes should be equal or greater then number of cell types.")
+    }
+
+    # fix signature names
+    if (is.null(names(sigMatrix))){
+        signatures <- vapply(seq_along(sigMatrix), function(i){
+        paste0('sig', i)}, FUN.VALUE = character(1))
+        names(sigMatrix) <- signatures
     }
 
     # fix cell type names
     sigMatrix <- lapply(sigMatrix,fix_col_names)
 
     # create data frame containing methods and signatures combinations
-    if (is.null(names(sigMatrix))){
-        signatures <- vapply(seq_along(sigMatrix), function(i){
-        paste0('sig', i)}, FUN.VALUE = character(1))
-        names(sigMatrix) <- signatures
-    } else {signatures <- names(sigMatrix)}
-
-    df <- crossing(method = methods, signature = signatures)
+    df <- crossing(method = methods, signature = names(sigMatrix))
     df <- unite(df,'model',remove=FALSE)
 
     # run methods
@@ -124,15 +137,15 @@ deconvolute <- function(m, sigMatrix,
     names(res) <- res_names
 
     # extract coefficients
-    coefficients <- lapply(res_names, function(x) round(as.matrix(res[[x]]$coeff),2))
+    coefficients <- lapply(res_names, function(x) as.data.frame(round(res[[x]]$coeff,2)))
     names(coefficients) <- res_names
 
     # compute proportions
-    proportions <- lapply(coefficients, function(x) round((100/max(rowSums(x), na.rm=TRUE))*x,2))
+    proportions <- lapply(coefficients, function(x) as.data.frame(round((100/max(rowSums(x), na.rm=TRUE))*x,2)))
 
     # output
     res <- list(
-        coefficients = coefficients,
+        coefficients =  coefficients,
         proportions = proportions, 
         combinations = as.data.frame(df))
 

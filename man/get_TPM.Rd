@@ -20,10 +20,10 @@ Returns a transcript-per-million (TPM)-normalized matrix.
 which is the most suitable normalization for deconvolution.
 }
 \examples{
-# load data
-get_TPM(
-round(matrix(rexp(200, rate=.01), ncol=20)),
-round(matrix(rexp(10, rate=.001), ncol=1)))
+# get TPMs from raw counts and gene lengths.
+mat <- round(matrix(rexp(200, rate=.01), ncol=20))
+len <- round(matrix(rexp(10, rate=.001), ncol=1))+10
+tpm <- get_TPM(mat,as.vector(len))
 
 }
 \author{

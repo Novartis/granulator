@@ -28,13 +28,33 @@
 #'@author Vincent Kuettel, Sabina Pfister
 #'
 #'@examples
-#'# load data
-#'get_TPM(
-#'round(matrix(rexp(200, rate=.01), ncol=20)),
-#'round(matrix(rexp(10, rate=.001), ncol=1)))
+#'# get TPMs from raw counts and gene lengths.
+#'mat <- round(matrix(rexp(200, rate=.01), ncol=20))
+#'len <- round(matrix(rexp(10, rate=.001), ncol=1))+10
+#'tpm <- get_TPM(mat,as.vector(len))
 #'
 #'@export
 get_TPM <- function(counts, effLen){
 
-    return( apply(counts,2,countToTpm,effLen) )
+    # input check
+    if (!is.vector(effLen))
+        stop('effLen should be a vector.')
+
+    if (sum(is.na(effLen))>0)
+        stop("effLen should not contain missing values.")
+
+    if (any(effLen<1))
+        stop("effLen should not contain values lower than 1.")
+
+    if (!is.matrix(counts))
+        stop('counts should be a matrix.')
+
+    if (sum(is.na(counts))>0)
+        stop("counts should not contain missing values.")
+
+    if (any(counts<0))
+        stop("counts should not contain negative values.")
+
+    # return tpms
+    return( as.matrix(apply(counts,2,countToTpm,effLen)) )
 }

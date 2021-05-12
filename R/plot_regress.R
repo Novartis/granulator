@@ -57,7 +57,7 @@ plot_regress <- function(benchmarked, method = 'svr', signature = 'sig1') {
 
     # check
     if(!(paste0(method,'_',signature) %in% benchmarked$combinations$model))
-        stop('Method or signature name are not valid names.')
+        stop('method or signature name are not valid names.')
 
     # data
     data <- benchmarked$data[[paste0(method,'_',signature)]]

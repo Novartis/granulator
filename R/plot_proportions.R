@@ -52,7 +52,7 @@ plot_proportions <- function(deconvoluted, method = 'svr', signature = 'sig1') {
 
     # check
     if(!(paste0(method,'_',signature) %in% deconvoluted$combinations$model))
-        stop('Method or signature name are not valid names.')
+        stop('method or signature name are not valid names.')
 
     # data
     dat <- deconvoluted$proportions[[paste0(method,'_',signature)]]

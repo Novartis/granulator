@@ -21,6 +21,14 @@ test_that("Load data", {
     expect_equal(class(sigMatrix_ABIS_S3)[1],"matrix")
     expect_equal(class(plot_similarity(sigMatrix_ABIS_S3))[1],"gg")
 
+    # test sigMatrix list
+    sigList = list(
+        ABIS_S0 = sigMatrix_ABIS_S0,
+        ABIS_S1 = sigMatrix_ABIS_S1, 
+        ABIS_S2 = sigMatrix_ABIS_S2, 
+        ABIS_S3 = sigMatrix_ABIS_S3)
+    expect_equal(class(plot_similarity(sigList))[1],"gg")
+
     # test bulkRNAseq_ABIS
     expect_equal(class(bulkRNAseq_ABIS)[1],"matrix")
     

@@ -10,9 +10,7 @@ benchmark(deconvoluted, ground_truth)
 \item{deconvoluted}{Output object of the function \code{deconvolute}.}
 
 \item{ground_truth}{A matrix containing measured cell type 
-proportions. Samples names are inlcuded in rownames. In the case multiple 
-signatures were tested, the corresponding data frames containing the 
-measured proportions can be given as a list.}
+proportions in percentages. Samples names are inlcuded in rownames.}
 }
 \value{
 Returns a list containing thres elements: \itemize{

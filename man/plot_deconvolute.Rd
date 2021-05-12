@@ -45,8 +45,7 @@ decon <- deconvolute(m = bulkRNAseq_ABIS,
 sigMatrix = sigMatrix_ABIS_S0)
 
 # plot deconvolute
-plot_deconvolute(deconvoluted = decon, 
-scale = TRUE, labels = FALSE, markers=TRUE)
+plot_deconvolute(deconvoluted = decon)
 
 }
 \author{

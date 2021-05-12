@@ -15,7 +15,7 @@
 
 #'@title Dtangle
 #'
-#'@description \code{model_dtangle}  solves the linear model A*coeff=y using
+#'@description \code{model_dtangle}  solves the linear model x*coeff=y using
 #'the function \code{dtangle} from the package \pkg{limma}.
 #'
 #'@param sigMatrix Signature matrix: a genes (rows) by cell types (columns)
@@ -25,8 +25,8 @@
 #'
 #'@param x Matrix with gene name son rows or columns.
 #'
-#'@return Returns a list comprising a data frame containing the estimated
-#'coefficients (rows) for each sample (columns).
+#'@return Coefficients: a data frame containing estimates for 
+#'coefficients for the linear model x*coeff=y.
 #'
 #'@importFrom dtangle dtangle
 #'

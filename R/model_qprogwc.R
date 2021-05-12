@@ -15,7 +15,7 @@
 
 #'@title Quadratic program with constraints
 #'
-#'@description \code{model_qprogwc} solves the linear model A*coeff=y using
+#'@description \code{model_qprogwc} solves the linear model x*coeff=y using
 #'quadratic programming under non-negativity and sum-to-one constraint.
 #'
 #'@details \code{model_qprogwc} applies the function \code{\link[limSolve]{lsei}}
@@ -27,8 +27,8 @@
 
 #'@param ncores Number of cores to use for parallel processing.
 #'
-#'@return Returns a list comprising a data frame containing the estimated
-#'coefficients (rows) for each sample (columns).
+#'@return Coefficients: a data frame containing estimates for 
+#'coefficients for the linear model x*coeff=y.
 #'
 #'@author Vincent Kuettel, Sabina Pfister
 #'

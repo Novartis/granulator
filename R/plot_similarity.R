@@ -56,10 +56,36 @@ plot_similarity <- function(sigMatrix){
 
     # input check
     if (!is.matrix(sigMatrix) & !is.list(sigMatrix))
-        stop('Signature matrix should be a matrix or list of multiple matrices; got ', class(sigMatrix))
+        stop('sigMatrix should be a matrix or list of multiple matrices.')
+
+    if (is.list(sigMatrix) & length(sigMatrix)==0)
+        stop('no valid sigMatrix provided.')
+
+    if (is.list(sigMatrix))
+        if (any(unlist(lapply(sigMatrix,function(x) !is.matrix(x)))))
+            stop('sigMatrix should be a matrix or list of multiple matrices.')
+
+    if (is.matrix(sigMatrix))
+        sigMatrix = list(sigMatrix)
+
+    for(i in seq_along(sigMatrix)){
+        if (any(is.na(sigMatrix[[i]])))
+            stop("sigMatrix should not contain missing values.")
+        if (any(sigMatrix[[i]]<0))
+            stop("sigMatrix should not contain missing values.")
+        if (nrow(sigMatrix[[i]]) <= ncol(sigMatrix[[i]]))
+            stop("in sigMatrix the number of genes should be equal or greater then number of cell types.")
+    }
 
     if (is.matrix(sigMatrix))
         sigMatrix = list(sig = sigMatrix)
+
+    # fix signature names
+    if (is.null(names(sigMatrix))){
+        signatures <- vapply(seq_along(sigMatrix), function(i){
+        paste0('sig', i)}, FUN.VALUE = character(1))
+        names(sigMatrix) <- signatures
+    }
 
     # fix cell type names
     sigMatrix <- lapply(sigMatrix,fix_col_names)

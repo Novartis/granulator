@@ -24,8 +24,8 @@
 #'
 #'@param ncores Number of cores to use for parallel processing.
 #'
-#'@return Returns a list comprising a data frame containing the estimated
-#'coefficients (rows) for each sample (columns).
+#'@return Coefficients: a data frame containing estimates for 
+#'coefficients for the linear model x*coeff=y.
 #'
 #'@importFrom nnls nnls
 #'

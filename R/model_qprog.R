@@ -15,7 +15,7 @@
 
 #'@title Quadratic programming without constraints
 #'
-#'@description \code{model_qprog} solves the linear model A*coeff=y using
+#'@description \code{model_qprog} solves the linear model x*coeff=y using
 #'quadratic programming without constraints.
 #'
 #'@details \code{model_qprog} applies \code{\link[limSolve]{Solve}} function 
@@ -27,8 +27,8 @@
 #'
 #'@param ncores Number of cores to use for parallel processing.
 #'
-#'@return Returns a list comprising a data frame containing the estimated
-#'coefficients (rows) for each sample (columns).
+#'@return Coefficients: a data frame containing estimates for 
+#'coefficients for the linear model x*coeff=y.
 #'
 #'@importFrom limSolve lsei
 #'

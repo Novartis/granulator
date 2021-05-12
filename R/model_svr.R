@@ -15,7 +15,7 @@
 
 #'@title Support vector regression
 #'
-#'@description \code{model_svr} solves the linear model A*coeff=y using
+#'@description \code{model_svr} solves the linear model x*coeff=y using
 #'support vector regression.
 #'
 #'@details \code{model_svr} applies the \code{\link[e1071]{svm}} function.
@@ -26,8 +26,8 @@
 #'
 #'@param ncores Number of cores to use for parallel processing.
 #'
-#'@return Coefficients: a data frame containing estimates for cell sub-type
-#'proportions (columns) for individuals (rows).
+#'@return Coefficients: a data frame containing estimates for 
+#'coefficients for the linear model x*coeff=y.
 #'
 #'@import parallel
 #'@importFrom e1071 svm

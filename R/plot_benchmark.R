@@ -53,10 +53,10 @@ plot_benchmark <- function(benchmarked, metric = 'pcc'){
 
     # check
     if(length(metric)>1)
-        stop('Only one single metric should be provided; got ', length(metric))
+        stop('only one single metric should be provided.')
 
     if (!(metric %in% c('pcc','ccc','adj.r2','rmse')))
-        stop('Unkown metric ', metric)
+        stop('unkown metric. Available metrics: pcc, ccc, adj.r2 rmse')
 
     # plot
     stats <- benchmarked$summary

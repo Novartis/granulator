@@ -53,15 +53,6 @@ order_names <- function(y, x){
     return(list(y=as.matrix(y), x=as.matrix(x)))
 }
 
-#'@title get supported deconvolution methods acronyms
-#'@description \code{get_decon_methods} returns vector of deconvolution methods
-#'supported in this package.
-#'@return vector containing the acronyms of deconvolution methods
-#'@noRd
-get_decon_methods <- function(){
-    return(c('ols','nnls','qprog','qprogwc','rls','svr','dtangle'))
-}
-
 #'@title extract sample (donor) names from row names of ABIS data
 #'@description \code{\link{subject_names}} processes cell type labels in the 
 #'default input data.
@@ -135,7 +126,7 @@ smean_sdl <- function(x, na.rm=TRUE)
 #'@noRd
 countToTpm <- function(counts, effLen)
 {
-  rate <- log(counts) - log(effLen)
-  denom <- log(sum(exp(rate)))
-  ifelse(counts == 0, 0, exp(rate - denom + log(1e6)))
+    rate <- log(counts) - log(effLen)
+    denom <- log(sum(exp(rate)))
+    ifelse(counts == 0, 0, exp(rate - denom + log(1e6)))
 }

@@ -21,9 +21,7 @@
 #'@param deconvoluted Output object of the function \code{deconvolute}.
 #'
 #'@param ground_truth A matrix containing measured cell type 
-#'proportions. Samples names are inlcuded in rownames. In the case multiple 
-#'signatures were tested, the corresponding data frames containing the 
-#'measured proportions can be given as a list.
+#'proportions in percentages. Samples names are inlcuded in rownames.
 #'
 #'@return Returns a list containing thres elements: \itemize{
 #'\item{data: a list of data frames with celltype matched estimated and 
@@ -70,7 +68,13 @@ benchmark <- function(deconvoluted, ground_truth){
 
     # input check
     if (!is.matrix(ground_truth))
-        stop('Bulk RNA-seq should be a matrix; got ', class(ground_truth))
+        stop('ground_truth should be a matrix.')
+
+    if (sum(is.na(ground_truth))>0)
+        stop("ground_truth should not contain missing values.")
+
+    if (any(ground_truth<0))
+        stop("ground_truth should not contain negative values.")
 
     # fix cell type names
     ground_truth <- fix_col_names(ground_truth)
