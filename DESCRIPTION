@@ -1,7 +1,7 @@
 Package: granulator
 Type: Package
 Title: Rapid benchmarking of methods for *in silico* deconvolution of bulk RNA-seq data 
-Version: 0.99.10
+Version: 0.99.11
 Authors@R: 
   c(person(given = "Sabina",
            family = "Pfister",
@@ -16,7 +16,7 @@ Authors@R:
 Description: granulator is an R package for the cell type deconvolution of heterogeneous tissues based on bulk RNA-seq data or single cell RNA-seq expression profiles. The package provides a unified testing interface to rapidly run and benchmark multiple state-of-the-art deconvolution methods. Data for the deconvolution of peripheral blood mononuclear cells (PBMCs) into individual immune cell types is provided as well.
 URL: https://github.com/xanibas/granulator
 BugReports: https://github.com/xanibas/granulator/issues
-Depends: R (>= 4.0)
+Depends: R (>= 4.1)
 Suggests: 
     BiocStyle,
     knitr,
