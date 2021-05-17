@@ -13,13 +13,10 @@ Authors@R:
     person(given = "Enrico",
            family = "Ferrero",
            role = "aut"))
-Description: granulator is an R package for the estimation of cell type proportions from heterogeneous tissues 
-    based on bulk RNA-seq data or single cell RNA-seq expression profiles. The package provides a unified testing 
-    interface to rapidly run and benchmark multiple state-of-the-art deconvolution methods. Data for the deconvolution 
-    of peripheral blood mononuclear cells (PBMCs) into individual immune cell types is provided as well.
+Description: granulator is an R package for the cell type deconvolution of heterogeneous tissues based on bulk RNA-seq data or single cell RNA-seq expression profiles. The package provides a unified testing interface to rapidly run and benchmark multiple state-of-the-art deconvolution methods. Data for the deconvolution of peripheral blood mononuclear cells (PBMCs) into individual immune cell types is provided as well.
 URL: https://github.com/xanibas/granulator
 BugReports: https://github.com/xanibas/granulator/issues
-Depends: R (>= 4.1)
+Depends: R (>= 4.0)
 Suggests: 
     BiocStyle,
     knitr,
